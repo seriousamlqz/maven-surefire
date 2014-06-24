@@ -120,4 +120,12 @@ public interface SurefireExecutionParameters
     Boolean getFailIfNoSpecifiedTests();
 
     void setFailIfNoSpecifiedTests( Boolean failIfNoSpecifiedTests );
+
+    Boolean getRerunFailingTests();
+
+    void setRerunFailingTests(Boolean rerunFailingTests);
+
+    int getRerunFailingTestsCount();
+
+    void setRerunFailingTestsCount(int rerunFailingTestsCount);
 }

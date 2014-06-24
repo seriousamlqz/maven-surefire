@@ -19,11 +19,15 @@ package org.apache.maven.surefire.junitcore;
  * under the License.
  */
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.maven.surefire.common.junit4.JUnit4ProviderUtil;
 import org.apache.maven.surefire.common.junit4.JUnit4RunListenerFactory;
 import org.apache.maven.surefire.common.junit48.FilterFactory;
 import org.apache.maven.surefire.common.junit48.JUnit48Reflector;
@@ -43,7 +47,11 @@ import org.apache.maven.surefire.util.ScanResult;
 import org.apache.maven.surefire.util.ScannerFilter;
 import org.apache.maven.surefire.util.TestsToRun;
 import org.apache.maven.surefire.util.internal.StringUtils;
+import org.junit.internal.runners.statements.Fail;
 import org.junit.runner.manipulation.Filter;
+import org.junit.runner.notification.Failure;
+
+import static org.apache.maven.surefire.common.junit4.JUnit4RunListener.isFailureInsideJUnitItself;
 
 /**
  * @author Kristian Rosenvold
@@ -72,6 +80,10 @@ public class JUnitCoreProvider
 
     private final ScanResult scanResult;
 
+    private final Boolean rerunFailingTests;
+
+    private final int rerunFailingTestsCount;
+
     public JUnitCoreProvider( ProviderParameters providerParameters )
     {
         this.providerParameters = providerParameters;
@@ -81,6 +93,8 @@ public class JUnitCoreProvider
         this.jUnitCoreParameters = new JUnitCoreParameters( providerParameters.getProviderProperties() );
         this.scannerFilter = new JUnit48TestChecker( testClassLoader );
         this.requestedTestMethod = providerParameters.getTestRequest().getRequestedTestMethod();
+        this.rerunFailingTests = providerParameters.getTestRequest().getRerunFailingTests();
+        this.rerunFailingTestsCount = providerParameters.getTestRequest().getRerunFailingTestsCount();
 
         customRunListeners =
             JUnit4RunListenerFactory.createCustomListeners( providerParameters.getProviderProperties().getProperty( "listener" ) );
@@ -131,7 +145,39 @@ public class JUnitCoreProvider
 
         org.junit.runner.notification.RunListener jUnit4RunListener = getRunListener( reporterFactory, consoleLogger );
         customRunListeners.add( 0, jUnit4RunListener );
+
+        // Add test failure listener
+        TestFailureListener testFailureListener = new TestFailureListener();
+        customRunListeners.add( 0, testFailureListener );
+
         JUnitCoreWrapper.execute( testsToRun, jUnitCoreParameters, customRunListeners, filter );
+
+        // Rerun failing tests if rerunFailingTests is set to true
+        if ( this.rerunFailingTests )
+        {
+
+            int rerunCount = this.rerunFailingTestsCount;
+            if ( rerunCount < 1 )
+            {
+                rerunCount = 1;
+            }
+
+            for ( int i = 0; i < rerunCount; i++ )
+            {
+                List<Failure> failures = testFailureListener.getAllFailures();
+                if ( failures.size() == 0 )
+                {
+                    break;
+                }
+                Map<Class<?>, Set<String>> failingTests =
+                    JUnit4ProviderUtil.generateFailingTests( failures, testsToRun );
+                testFailureListener.reset();
+                final FilterFactory filterFactory = new FilterFactory( testClassLoader );
+                Filter failingMethodsFilter = filterFactory.createFailingMethodFilter( failingTests );
+                JUnitCoreWrapper.execute( testsToRun, jUnitCoreParameters, customRunListeners,
+                                          filterFactory.and( filter, failingMethodsFilter ) );
+            }
+        }
         return reporterFactory.close();
     }
 
@@ -190,4 +236,28 @@ public class JUnitCoreProvider
     {
         return !StringUtils.isBlank( requestedTestMethod );
     }
+
+    private static class TestFailureListener extends org.junit.runner.notification.RunListener {
+
+        List<Failure> allFailures = new ArrayList<Failure>(  );
+
+        @Override
+        public void testFailure( Failure failure )
+            throws java.lang.Exception
+        {
+            allFailures.add( failure );
+        }
+
+        public List<Failure> getAllFailures()
+        {
+            return allFailures;
+        }
+
+        public void reset()
+        {
+            allFailures.clear();
+        }
+    }
+
+
 }

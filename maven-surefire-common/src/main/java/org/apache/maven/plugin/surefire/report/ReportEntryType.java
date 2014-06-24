@@ -21,9 +21,93 @@ package org.apache.maven.plugin.surefire.report;
 
 public enum ReportEntryType
 {
-    error,
-    failure,
-    skipped,
+    error
+        {
+            @Override
+            public String getXmlTag()
+            {
+                return "error";
+            }
+
+            @Override
+            public String getFlakyXmlTag()
+            {
+                return "flakyError";
+            }
+
+            @Override
+            public String getRerunXmlTag()
+            {
+                return "rerunError";
+            }
+        },
+
+    failure
+        {
+            @Override
+            public String getXmlTag()
+            {
+                return "failure";
+            }
+
+            @Override
+            public String getFlakyXmlTag()
+            {
+                return "flakyFailure";
+            }
+
+            @Override
+            public String getRerunXmlTag()
+            {
+                return "rerunFailure";
+            }
+        },
+
+    skipped
+        {
+            @Override
+            public String getXmlTag()
+            {
+                return "skipped";
+            }
+
+            @Override
+            public String getFlakyXmlTag()
+            {
+                return "";
+            }
+
+            @Override
+            public String getRerunXmlTag()
+            {
+                return "";
+            }
+        },
+
     success
+        {
+            public String getXmlTag()
+            {
+                return "";
+            }
+
+            @Override
+            public String getFlakyXmlTag()
+            {
+                return "";
+            }
+
+            @Override
+            public String getRerunXmlTag()
+            {
+                return "";
+            }
+        };
+
+    public abstract String getXmlTag();
+
+    public abstract String getFlakyXmlTag();
+
+    public abstract String getRerunXmlTag();
 
 }

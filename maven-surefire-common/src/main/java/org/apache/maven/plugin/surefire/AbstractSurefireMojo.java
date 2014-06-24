@@ -429,6 +429,24 @@ public abstract class AbstractSurefireMojo
     @Parameter( property = "threadCount" )
     protected int threadCount;
 
+    /**
+     * If set to true, rerun failing tests immediately after they fail. If a failing test passes in any of those reruns,
+     * it will be marked as pass. However, all the failing attempts will be recorded.
+     * <p/>
+     * By default any failing test will be rerun once. This number can be configured via <code>rerunFailingTestsCount
+     * </code>.
+     */
+    @Parameter( property = "rerunFailingTests", defaultValue = "false" )
+    protected boolean rerunFailingTests;
+
+
+    /**
+     * The number of times each failing test will be rerun. It will only take effects if <code>rerunFailingTests</code>
+     * is set to true.
+     */
+    @Parameter( property = "rerunFailingTestsCount", defaultValue = "1" )
+    protected int rerunFailingTestsCount;
+
 
     /**
      * Option to specify the number of VMs to fork in parallel in order to execute the tests.
@@ -1380,7 +1398,8 @@ public abstract class AbstractSurefireMojo
             isTestNg ? new TestArtifactInfo( testNgArtifact.getVersion(), testNgArtifact.getClassifier() ) : null;
         List<File> testXml = getSuiteXmlFiles() != null ? Arrays.asList( getSuiteXmlFiles() ) : null;
         TestRequest testSuiteDefinition =
-            new TestRequest( testXml, getTestSourceDirectory(), getTest(), getTestMethod() );
+            new TestRequest( testXml, getTestSourceDirectory(), getTest(), getTestMethod(), getRerunFailingTests(),
+                             getRerunFailingTestsCount() );
         final boolean failIfNoTests;
 
         if ( isValidSuiteXmlFileConfig() && getTest() == null )
@@ -3007,5 +3026,25 @@ public abstract class AbstractSurefireMojo
     public void setClasspathDependencyScopeExclude( String classpathDependencyScopeExclude )
     {
         this.classpathDependencyScopeExclude = classpathDependencyScopeExclude;
+    }
+
+    public Boolean getRerunFailingTests()
+    {
+        return this.rerunFailingTests;
+    }
+
+    public void setRerunFailingTests( Boolean rerunFailingTests )
+    {
+        this.rerunFailingTests = rerunFailingTests;
+    }
+
+    public int getRerunFailingTestsCount()
+    {
+        return this.rerunFailingTestsCount;
+    }
+
+    public void setRerunFailingTestsCount( int rerunFailingTestsCount )
+    {
+        this.rerunFailingTestsCount = rerunFailingTestsCount;
     }
 }

@@ -47,4 +47,6 @@ public interface BooterConstants
     String PROVIDER_CONFIGURATION = "providerConfiguration";
     String FORKTESTSET = "forkTestSet";
     String FORKTESTSET_PREFER_TESTS_FROM_IN_STREAM = "preferTestsFromInStream";
+    String RERUN_FAILING_TESTS = "rerunFailingTests";
+    String RERUN_FAILING_TESTS_COUNT = "rerunFailingTestsCount";
 }

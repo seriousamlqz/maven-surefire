@@ -36,6 +36,10 @@ public class TestRequest
 
     private final String requestedTest;
 
+    private final boolean rerunFailingTests;
+
+    private final int rerunFailingTestsCount;
+
     /**
      * @since 2.7.3
      */
@@ -51,10 +55,18 @@ public class TestRequest
      */
     public TestRequest( List suiteXmlFiles, File testSourceDirectory, String requestedTest, String requestedTestMethod )
     {
+        this( createFiles( suiteXmlFiles ), testSourceDirectory, requestedTest, requestedTestMethod, false, 1 );
+    }
+
+    public TestRequest( List suiteXmlFiles, File testSourceDirectory, String requestedTest, String requestedTestMethod,
+                        boolean rerunFailingTests, int rerunFailingTestsCount )
+    {
         this.suiteXmlFiles = createFiles( suiteXmlFiles );
         this.testSourceDirectory = testSourceDirectory;
         this.requestedTest = requestedTest;
         this.requestedTestMethod = requestedTestMethod;
+        this.rerunFailingTests = rerunFailingTests;
+        this.rerunFailingTestsCount = rerunFailingTestsCount;
     }
 
     /**
@@ -96,6 +108,28 @@ public class TestRequest
     public String getRequestedTestMethod()
     {
         return requestedTestMethod;
+    }
+
+    /**
+     * Whether to rerun failing tests, issued with -Dsurefire.rerunFailingTests from the command line.
+     * Defaults to false.
+     *
+     * @return The boolean parameter to indicate whether to rerun failing tests
+     */
+    public Boolean getRerunFailingTests()
+    {
+        return this.rerunFailingTests;
+    }
+
+    /**
+     * How many times to rerun failing tests, issued with -Dsurefire.rerunFailingTestsCount from the command line.
+     * Only effective if rerunFailingTests is set to true.
+     *
+     * @return The int parameter to indicate how many times to rerun failing tests
+     */
+    public int getRerunFailingTestsCount()
+    {
+        return this.rerunFailingTestsCount;
     }
 
     private static List<File> createFiles( List suiteXmlFiles )
